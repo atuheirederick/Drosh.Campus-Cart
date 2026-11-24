@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drosh Campus-Cart UG</title>
+<style>
+:root{--bg:#fafaf7;--sf:#fff;--tx:#1b1f1a;--mu:#5d665c;--ac:#0b6b3a;--ac2:#f2b705;--bd:#e0e3da;--er:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121512;--sf:#1c211b;--tx:#eef1ec;--mu:#a3ada0;--ac:#3fbf7a;--bd:#2d352c;--er:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121512;--sf:#1c211b;--tx:#eef1ec;--mu:#a3ada0;--ac:#3fbf7a;--bd:#2d352c;--er:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px}
+header b{font-size:1.1rem;color:var(--ac);margin-right:auto}
+button,select,input{font:inherit;color:var(--tx)}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--sf);border-radius:8px;padding:7px 12px}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button.p:disabled{opacity:.5;cursor:not-allowed}
+button.on{border-color:var(--ac);font-weight:600}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ac2);outline-offset:1px}
+main{max-width:980px;margin:0 auto;padding:14px}
+input,select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--sf);margin:4px 0 10px}
+label{font-size:.9rem;color:var(--mu)}
+.hero{background:var(--ac);color:#fff;border-radius:14px;padding:20px;margin-bottom:14px}.hero h1{margin:0 0 4px;font-size:1.5rem}.hero p{margin:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.card,.box{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.card .e{font-size:2.4rem}.mu{color:var(--mu);font-size:.88rem}.er{color:var(--er)}.pr{font-weight:700;color:var(--ac)}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.trk{display:flex;gap:4px;margin:8px 0}.trk span{flex:1;text-align:center;font-size:.75rem;padding:5px 2px;border-radius:6px;background:var(--bd);color:var(--mu)}.trk .d{background:var(--ac);color:#fff}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:560px}td,th{border-bottom:1px solid var(--bd);padding:6px;text-align:left;font-size:.9rem}
+#t{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:8px;display:none;z-index:9;max-width:90%}
+footer{text-align:center;color:var(--mu);font-size:.8rem;padding:18px}
+</style></head><body>
+<header id="h"></header><main id="m"></main>
+<footer>Prototype for MGT3151 · fictitious data and mock payments only. Never enter a real PIN, OTP or card.</footer>
+<div id="t" role="status" aria-live="polite"></div>
+<script>
+const P=[[1,'Business Statistics Textbook','Books',45000,'📘',8],[2,'Academic Writing Guide','Books',28000,'📗',10],[3,'A4 Ruled Notebook','Stationery',3500,'📓',40],[4,'Pen Pack (10)','Stationery',5000,'🖊️',30],[5,'Scientific Calculator','Stationery',38000,'🧮',6],[6,'Roasted Groundnuts','Snacks',1500,'🥜',50],[7,'Samosas (4)','Snacks',3000,'🥟',25],[8,'Mandazi Bag','Snacks',2000,'🍩',30],[9,'Rolex (egg chapati)','Breakfast',3500,'🌯',20],[10,'Porridge Cup','Breakfast',2000,'🥣',20],[11,'Tea &amp; Mandazi Combo','Tea',3500,'🍵',25],[12,'Masala Tea Flask','Tea',2500,'☕',25],[13,'Posho &amp; Beans','Lunch',5000,'🍛',20],[14,'Rice &amp; Chicken','Lunch',9000,'🍗',15],[15,'UCU Hoodie','Merch',55000,'🧥',7],[16,'UCU Branded Mug','Merch',15000,'🥤',12],[17,'UCU T‑shirt','Merch',25000,'👕',14]];
+const CATS=['All','Books','Stationery','Snacks','Breakfast','Tea','Lunch','Merch'],ST=['Paid','Preparing','Out for delivery','Delivered'],LOC=['Main Gate','Library','Hostel Block A','Hostel Block B','Faculty of Engineering','Cafeteria'],FEE=1000,K='dcc_v1';
+const $=s=>document.querySelector(s),money=n=>'UGX '+n.toLocaleString(),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=s=>{let h=5381;for(const c of'drosh'+s)h=(h*33)^c.charCodeAt(0);return(h>>>0).toString(36)};
+let db,v='shop',q='',cat='All',tab='in';
+function save(){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){}}
+try{db=JSON.parse(localStorage.getItem(K))}catch(e){}
+if(!db){db={users:[{n:'Drosh Admin',e:'admin@drosh.test',h:H('Admin123'),r:'admin'},{n:'Demo Student',e:'student@ucu.test',h:H('Student123'),r:'customer'}],orders:[],stock:{},cart:{},s:null,log:[],seq:1000};P.forEach(p=>db.stock[p[0]]=p[5]);save()}
+const me=()=>db.users.find(u=>u.e===db.s),isA=()=>me()&&me().r==='admin';
+const log=a=>{db.log.unshift({t:new Date().toLocaleString(),u:db.s||'guest',a});db.log=db.log.slice(0,60);save()};
+function toast(m){const t=$('#t');t.textContent=m;t.style.display='block';clearTimeout(toast.i);toast.i=setTimeout(()=>t.style.display='none',2600)}
+function go(x){v=x;draw()}
+const cn=()=>Object.values(db.cart).reduce((a,b)=>a+b,0);
+function draw(){
+ $('#h').innerHTML=`<b>🛒 Drosh Campus-Cart UG</b><button onclick="go('shop')" class="${v=='shop'?'on':''}">Shop</button><button onclick="go('cart')" class="${v=='cart'?'on':''}">Cart (${cn()})</button>`+
+ (db.s?(isA()?`<button onclick="go('admin')" class="${v=='admin'?'on':''}">Admin</button>`:`<button onclick="go('orders')" class="${v=='orders'?'on':''}">My orders</button>`)+`<button onclick="out()">Log out (${esc(me().n.split(' ')[0])})</button>`:`<button class="p" onclick="go('login')">Log in / Sign up</button>`);
+ const f={shop,cart,login,orders,admin}[v];$('#m').innerHTML=f();if(v=='shop')grid()}
+function shop(){return`<div class="hero"><h1>Campus Essentials, Delivered</h1><p>Books • Stationery • Snacks • Branded Merchandise • Breakfast, Tea &amp; Lunch for UCU students</p></div>
+<label for="q">Search products</label><input id="q" type="search" placeholder="e.g. tea, notebook, hoodie" value="${esc(q)}" oninput="q=this.value;grid()">
+<div class="chips" role="group" aria-label="Categories">${CATS.map(c=>`<button class="${c==cat?'on':''}" onclick="cat='${c}';draw()">${c}</button>`).join('')}</div><div class="grid" id="g"></div>`}
+function grid(){const l=P.filter(p=>(cat=='All'||p[2]==cat)&&p[1].toLowerCase().includes(q.toLowerCase().trim()));
+ $('#g').innerHTML=l.length?l.map(p=>{const s=db.stock[p[0]];return`<div class="card"><div class="e" aria-hidden="true">${p[4]}</div><div><b>${p[1]}</b></div><div class="mu">${p[2]} · ${s>0?s+' in stock':'<span class="er">Out of stock</span>'}</div><div class="row"><span class="pr">${money(p[3])}</span><button class="p" ${s<1?'disabled':''} onclick="add(${p[0]})">Add</button></div></div>`}).join(''):'<p>No products match your search.</p>'}
+function add(id){const n=(db.cart[id]||0)+1;if(n>db.stock[id])return toast('Only '+db.stock[id]+' left in stock');db.cart[id]=n;save();toast('Added to cart');$('#h').querySelectorAll('button')[1].textContent='Cart ('+cn()+')'}
+function chg(id,d){const n=(db.cart[id]||0)+d;if(n>db.stock[id])return toast('Not enough stock');if(n<1)delete db.cart[id];else db.cart[id]=n;save();draw()}
+function cart(){const ids=Object.keys(db.cart);if(!ids.length)return`<div class="box"><h2>Your cart is empty</h2><button class="p" onclick="go('shop')">Browse products</button></div>`;
+ const sub=ids.reduce((a,i)=>a+P.find(p=>p[0]==i)[3]*db.cart[i],0);
+ let h=`<h2>Your cart</h2>`+ids.map(i=>{const p=P.find(p=>p[0]==i);return`<div class="box row" style="margin-bottom:8px"><span>${p[4]} ${p[1]}<br><span class="mu">${money(p[3])} each</span></span><span><button aria-label="Less" onclick="chg(${i},-1)">−</button> <b>${db.cart[i]}</b> <button aria-label="More" onclick="chg(${i},1)">+</button></span><b>${money(p[3]*db.cart[i])}</b></div>`}).join('')+
+ `<div class="box"><div class="row"><span>Subtotal</span><b>${money(sub)}</b></div><div class="row"><span>Campus delivery</span><b>${money(FEE)}</b></div><div class="row"><span>Total</span><b class="pr">${money(sub+FEE)}</b></div></div>`;
+ if(!db.s)return h+`<div class="box" style="margin-top:10px"><p>Please log in or create an account to checkout.</p><button class="p" onclick="go('login')">Log in / Sign up</button></div>`;
+ return h+`<div class="box" style="margin-top:10px"><h3>Mock checkout (sandbox)</h3><label for="loc">Delivery point</label><select id="loc"><option value="">Select…</option>${LOC.map(l=>`<option>${l}</option>`).join('')}</select>
+ <label for="pm">Payment method</label><select id="pm"><option>Mock Mobile Money</option><option>Mock Card</option></select>
+ <label for="ph">Mock wallet number (07XXXXXXXX, fictitious)</label><input id="ph" inputmode="numeric" maxlength="10" placeholder="0700000001">
+ <p class="mu">Sandbox only: no real money moves. A number ending in 0000 simulates a declined payment.</p><p id="ce" class="er" role="alert"></p><button class="p" onclick="pay()">Pay ${money(sub+FEE)} (sandbox)</button></div>`}
+function pay(){const loc=$('#loc').value,ph=$('#ph').value.trim(),e=$('#ce');
+ if(!loc)return e.textContent='Please choose a delivery point.';
+ if(!/^07\d{8}$/.test(ph))return e.textContent='Enter a valid 10-digit number starting with 07.';
+ const items=Object.keys(db.cart).map(i=>{const p=P.find(p=>p[0]==i);return{id:p[0],n:p[1],q:db.cart[i],p:p[3]}});
+ for(const it of items)if(it.q>db.stock[it.id])return e.textContent='Sorry, '+it.n+' no longer has enough stock.';
+ if(ph.endsWith('0000')){log('Payment declined (sandbox)');return e.textContent='Payment declined by sandbox. Try another number.'}
+ const total=items.reduce((a,i)=>a+i.p*i.q,0)+FEE,id='DC-'+(++db.seq);
+ items.forEach(i=>db.stock[i.id]-=i.q);
+ db.orders.unshift({id,e:db.s,items,total,loc,pay:document.querySelector('#pm').value,st:0,ts:new Date().toLocaleString(),ret:null,rate:0});
+ db.cart={};log('Order '+id+' paid '+money(total));save();toast('Payment successful. Order '+id);go('orders')}
+function login(){return`<div class="box" style="max-width:420px;margin:auto"><div class="chips"><button class="${tab=='in'?'on':''}" onclick="tab='in';draw()">Log in</button><button class="${tab=='up'?'on':''}" onclick="tab='up';draw()">New customer? Sign up</button></div>
+ ${tab=='up'?`<label for="n">Full name</label><input id="n" autocomplete="name">`:''}<label for="e">Email</label><input id="e" type="email" autocomplete="email"><label for="pw">Password${tab=='up'?' (8+ characters, letters and a number)':''}</label><input id="pw" type="password" autocomplete="${tab=='up'?'new-password':'current-password'}">
+ <p id="le" class="er" role="alert"></p><button class="p" onclick="${tab=='up'?'reg()':'sign()'}">${tab=='up'?'Create account':'Log in'}</button>
+ <p class="mu">Demo accounts (fictitious): student@ucu.test / Student123 · admin@drosh.test / Admin123</p></div>`}
+function sign(){const e=$('#e').value.trim().toLowerCase(),u=db.users.find(u=>u.e==e);
+ if(!u||u.h!=H($('#pw').value)){log('Failed login for '+e);return $('#le').textContent='Incorrect email or password.'}
+ db.s=e;log('Login');save();go(u.r=='admin'?'admin':'shop');toast('Welcome, '+u.n)}
+function reg(){const n=$('#n').value.trim(),e=$('#e').value.trim().toLowerCase(),p=$('#pw').value,er=$('#le');
+ if(n.length<2)return er.textContent='Please enter your name.';
+ if(!/^\S+@\S+\.\S+$/.test(e))return er.textContent='Enter a valid email address.';
+ if(p.length<8||!/[a-z]/i.test(p)||!/\d/.test(p))return er.textContent='Password needs 8+ characters with letters and a number.';
+ if(db.users.some(u=>u.e==e))return er.textContent='That email is already registered.';
+ db.users.push({n,e,h:H(p),r:'customer'});db.s=e;log('New customer registered');save();go('shop');toast('Account created. Welcome, '+n)}
+function out(){log('Logout');db.s=null;save();go('shop')}
+function trk(o){return`<div class="trk">${ST.map((s,i)=>`<span class="${i<=o.st?'d':''}">${s}</span>`).join('')}</div>`}
+function orders(){if(!db.s)return login();const l=db.orders.filter(o=>o.e==db.s);
+ return`<h2>My orders</h2>`+(l.length?l.map(o=>`<div class="box" style="margin-bottom:10px"><div class="row"><b>${o.id}</b><span class="mu">${o.ts}</span></div>${trk(o)}<div class="mu">${o.items.map(i=>i.q+'× '+i.n).join(', ')}</div><div class="mu">Deliver to: ${esc(o.loc)} · ${o.pay}</div><b class="pr">${money(o.total)}</b>${after(o)}</div>`).join(''):'<p>No orders yet. <a href="#" onclick="go(\'shop\');return false">Start shopping</a></p>')}
+function after(o){if(o.st<3)return'';let h='<hr>';
+ h+=o.rate?`<div>Your rating: ${'★'.repeat(o.rate)}${'☆'.repeat(5-o.rate)}</div>`:`<div>Rate this order: ${[1,2,3,4,5].map(n=>`<button aria-label="${n} stars" onclick="rate('${o.id}',${n})">${n}★</button>`).join(' ')}</div>`;
+ h+=o.ret?`<div style="margin-top:6px">Return/refund request: <b>${o.ret}</b></div>`:`<button style="margin-top:6px" onclick="ret('${o.id}')">Report a problem / request return</button>`;return h}
+const ord=id=>db.orders.find(o=>o.id==id);
+function rate(id,n){ord(id).rate=n;log('Rated '+id);save();draw()}
+function ret(id){ord(id).ret='Requested';log('Return requested '+id);save();draw();toast('Request sent to Drosh support')}
+function adv(id){if(!isA())return;const o=ord(id);if(o.st<3){o.st++;log(id+' → '+ST[o.st]);save();draw()}}
+function dec(id,r){if(!isA())return;ord(id).ret=r;log('Return '+r+' '+id);save();draw()}
+function rest(i){if(!isA())return;db.stock[i]+=10;log('Restocked product '+i);save();draw()}
+function admin(){if(!isA()){log('Blocked admin access');return`<div class="box"><h2>Access denied</h2><p>Only Drosh staff can open this page.</p></div>`}
+ const rev=db.orders.reduce((a,o)=>a+o.total,0);
+ return`<h2>Admin: fulfilment &amp; stock</h2><div class="grid" style="margin-bottom:12px"><div class="box"><div class="mu">Orders</div><b>${db.orders.length}</b></div><div class="box"><div class="mu">Sandbox revenue</div><b>${money(rev)}</b></div><div class="box"><div class="mu">Open returns</div><b>${db.orders.filter(o=>o.ret=='Requested').length}</b></div></div>
+ <div class="box scroll"><h3>Orders</h3><table><tr><th>ID</th><th>Customer</th><th>Total</th><th>Status</th><th>Action</th><th>Returns</th></tr>${db.orders.map(o=>`<tr><td>${o.id}</td><td>${esc(o.e)}</td><td>${money(o.total)}</td><td>${ST[o.st]}</td><td>${o.st<3?`<button class="p" onclick="adv('${o.id}')">Mark ${ST[o.st+1]}</button>`:'Done'}</td><td>${o.ret=='Requested'?`<button onclick="dec('${o.id}','Approved')">Approve</button> <button onclick="dec('${o.id}','Rejected')">Reject</button>`:(o.ret||'—')}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>'}</table></div>
+ <div class="box scroll" style="margin-top:10px"><h3>Inventory</h3><table><tr><th>Product</th><th>Stock</th><th></th></tr>${P.map(p=>`<tr><td>${p[4]} ${p[1]}</td><td>${db.stock[p[0]]}</td><td><button onclick="rest(${p[0]})">+10</button></td></tr>`).join('')}</table></div>
+ <div class="box scroll" style="margin-top:10px"><h3>Audit log</h3><table><tr><th>Time</th><th>User</th><th>Event</th></tr>${db.log.map(l=>`<tr><td>${l.t}</td><td>${esc(l.u)}</td><td>${esc(l.a)}</td></tr>`).join('')}</table></div>`}
+draw();
+</script></body></html>
